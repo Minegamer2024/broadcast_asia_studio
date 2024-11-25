@@ -55,7 +55,7 @@ async def add_role(interaction: discord.Interaction, func: Literal["اضافة",
 image_extension = ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp')
 @client.tree.command(name="broadcast_setup", description="لأرسال لوحة تحكم البرودكاست")
 @discord.app_commands.default_permissions(administrator=True)
-async def role_member(interaction: discord.Interaction, description: str, channel: discord.TextChannel = None, image: discord.Attachment = None):
+async def broadcast_member(interaction: discord.Interaction, description: str, channel: discord.TextChannel = None, image: discord.Attachment = None):
     try:
         server_id = str(interaction.guild.id)
         with open("role.json", "r", encoding="utf-8") as f:
