@@ -17,7 +17,7 @@ async def on_ready():
     await client.tree.sync()
 @client.tree.command(name="role", description="لأضافة رتبة التي يمكنها استخدام البرودكاست")
 @discord.app_commands.default_permissions(administrator=True)
-async def add_role(interaction: discord.Interaction, func: Literal["اضافة", "ازالة"], role: discord.Role = None):
+async def add_role(interaction: discord.Interaction, func: Literal["اضافة", "ازالة"]):
     server_id = str(interaction.guild.id)
     with open("role.json", "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -26,14 +26,28 @@ async def add_role(interaction: discord.Interaction, func: Literal["اضافة",
     else:
         pass
     if func == "اضافة":
-        if role == None:
-            await interaction.response.send_message("يجب عليك اضافة الرتبة في role", ephemeral=True)
-            return
-        if role.name in data[server_id]:
-            await interaction.response.send_message("اسم هذه الرتبة موجود بالفعل ان كانت هذه رتبة جديدة فا يرجى تغيير اسمها")
-        else:
-            data[server_id][role.name] = role.id
-            await interaction.response.send_message("تم ادخال الرتبة في قاعدة البيانات", ephemeral=True)
+        id_role = discord.ui.TextInput(
+            label="ايدي",
+            placeholder="يرجى كتابة ايدي الرتبة هنا",
+            style=discord.TextStyle.short
+        )
+        modal = discord.ui.Modal(title="ايدي الرتبة")
+        modal.add_item(id_role)
+        async def on_submit(interaction: discord.Interaction):
+            role = interaction.guild.get_role(int(id_role.value))
+            if not role:
+                await interaction.response.send_message("هذا الايدي غير موجود في رتب السيرفر", ephemeral=True)
+                return
+            print(role.id)
+            if role.name in data[server_id]:
+                await interaction.response.send_message("اسم هذه الرتبة موجود بالفعل ان كانت هذه رتبة جديدة فا يرجى تغيير اسمها")
+            else:
+                data[server_id][role.name] = role.id
+                await interaction.response.send_message("تم ادخال الرتبة في قاعدة البيانات", ephemeral=True)
+                with open("role.json", "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=4)
+        modal.on_submit = on_submit
+        await interaction.response.send_modal(modal)
     elif func == "ازالة":
         await interaction.response.defer(ephemeral=True)
         if not data[server_id]:
@@ -47,11 +61,11 @@ async def add_role(interaction: discord.Interaction, func: Literal["اضافة",
             view.add_item(select)
             async def select_callback(interaction: discord.Interaction):
                 del data[server_id][select.values[0]]
+                with open("role.json", "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=4)
                 await interaction.response.edit_message(content="تم ازالة الرتبة من قاعدة البيانات", view=None)
             select.callback = select_callback
             await interaction.followup.send("يرجى اختيار الرتبة التي تريد ازالتها", view=view, ephemeral=True)
-    with open("role.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
 image_extension = ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp')
 @client.tree.command(name="broadcast_setup", description="لأرسال لوحة تحكم البرودكاست")
 @discord.app_commands.default_permissions(administrator=True)
@@ -63,9 +77,6 @@ async def broadcast_member(interaction: discord.Interaction, description: str, c
         if server_id not in data or not data[server_id]:
             await interaction.response.send_message("لا يوجد اي رتب في الوقت الحالي لأرسال لوحة البرودكاست", ephemeral=True)
         else:
-            roless = []
-            for i in data[server_id]:
-                roless.append(data[server_id][i])
             if channel == None:
                 channel = interaction.channel
             else:
@@ -81,6 +92,9 @@ async def broadcast_member(interaction: discord.Interaction, description: str, c
             view.add_item(member_button)
             async def online_callback(interaction: discord.Interaction):
                 try:
+                    roless = []
+                    for i in data[server_id]:
+                        roless.append(data[server_id][i])
                     user_roles = [role.id for role in interaction.user.roles]
                     if any(role_id in user_roles for role_id in roless):
                         message = discord.ui.TextInput(
@@ -108,6 +122,9 @@ async def broadcast_member(interaction: discord.Interaction, description: str, c
                     await interaction.response.send_message("يوجد خطأ تقني لا يمكن فتح صفحة الارسال", ephemeral=True)
             async def offline_callback(interaction: discord.Interaction):
                 try:
+                    roless = []
+                    for i in data[server_id]:
+                        roless.append(data[server_id][i])
                     user_roles = [role.id for role in interaction.user.roles]
                     if any(role_id in user_roles for role_id in roless):
                         message = discord.ui.TextInput(
@@ -135,6 +152,9 @@ async def broadcast_member(interaction: discord.Interaction, description: str, c
                     await interaction.response.send_message("يوجد خطأ تقني لا يمكن فتح صفحة الارسال", ephemeral=True)
             async def all_callback(interaction: discord.Interaction):
                 try:
+                    roless = []
+                    for i in data[server_id]:
+                        roless.append(data[server_id][i])
                     user_roles = [role.id for role in interaction.user.roles]
                     if  any(role_id in user_roles for role_id in roless):
                         message = discord.ui.TextInput(
@@ -159,6 +179,9 @@ async def broadcast_member(interaction: discord.Interaction, description: str, c
                     await interaction.response.send_message("يوجد خطأ تقني لا يمكن فتح صفحة الارسال", ephemeral=True)
             async def member_callback(interaction: discord.Interaction):
                 try:
+                    roless = []
+                    for i in data[server_id]:
+                        roless.append(data[server_id][i])
                     user_roles = [role.id for role in interaction.user.roles]
                     if any(role_id in user_roles for role_id in roless):
                         id_member = discord.ui.TextInput(
